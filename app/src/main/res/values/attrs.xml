@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="TabIndicatorLayout">
+        <!-- 屏幕可见tab数量（宽度平均分给tab） -->
+        <attr name="tabVisibleNum" format="integer" />
+        <!-- 屏幕宽度是否平均分给tab -->
+        <attr name="tabFixedWidth" format="boolean" />
+        <!-- 指示器圆角 -->
+        <attr name="indicatorRadius" format="dimension" />
+        <!-- 指示器宽度 -->
+        <attr name="indicatorWidth" format="dimension" />
+        <!-- 指示器高度 -->
+        <attr name="indicatorHeight" format="dimension" />
+        <!-- 指示器宽度占tab宽度的百分比 -->
+        <attr name="indicatorWidthPercent" format="float" />
+        <!-- 指示器颜色 -->
+        <attr name="indicatorColor" format="color" />
+    </declare-styleable>
+</resources>
