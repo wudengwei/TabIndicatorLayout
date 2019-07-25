@@ -26,7 +26,8 @@ public class MainActivity extends AppCompatActivity {
     private List<Tab> tabList;
     private TabAdapter tabAdapter;
 
-    private List<String> mTitles = Arrays.asList("新闻", "音乐节", "游戏宽度","动漫", "汽车", "打开市场","美食","情感","歌曲");
+//    private List<String> mTitles = Arrays.asList("新闻", "音乐节", "游戏宽度","动漫", "汽车", "打开市场","美食","情感","歌曲");
+    private List<String> mTitles = Arrays.asList("新闻", "游戏宽度", "动漫","游戏宽度动漫");
     private List<Fragment> mFragments = new ArrayList<Fragment>();
 
     @Override

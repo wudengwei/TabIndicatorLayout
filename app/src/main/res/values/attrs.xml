@@ -6,6 +6,8 @@
         <attr name="tabVisibleNum" format="integer" />
         <!-- 屏幕宽度是否平均分给tab -->
         <attr name="tabFixedWidth" format="boolean" />
+        <!-- tabFixedWidth=true情况下,屏幕宽度按比重分给tab -->
+        <attr name="tabWidthRatio" format="string" />
         <!-- 指示器圆角 -->
         <attr name="indicatorRadius" format="dimension" />
         <!-- 指示器宽度 -->

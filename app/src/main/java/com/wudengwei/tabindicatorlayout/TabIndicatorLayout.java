@@ -25,17 +25,20 @@ import android.widget.LinearLayout;
  * Description: ${DESCRIPTION}
  */
 public class TabIndicatorLayout extends LinearLayout {
-    private int mVisibleTabNum = 5;//父view可以显示的tab数量（每个tab的宽度相等,需要fixedWidth = true）
+    private int mVisibleTabNum = 5;//tabFixedWidth=true情况下,父view可以显示的tab数量（每个tab的宽度相等）
     private boolean mTabFixedWidth = true;//tab的宽度是否固定（默认是，配合mVisibleTabNum）
+    private String mTabWidthRatio;//tabFixedWidth=true情况下,屏幕宽度按比重分给tab(专门针对，tab数量固定，但每个tab宽度相差较大)
+    private float mTabWidthRatioSum;
+    private float[] mTabWidthRatioArray;
 
     private float[] radiusArray = new float[8];//two radius values [X, Y]. The corners are ordered top-left, top-right, bottom-right, bottom-left
     private Paint mIndicatorPaint;
     private Path mIndicatorPath;
     private RectF mIndicatorRect;
     private float mIndicatorRadius = 0;//指示器圆角半径
-    private float mIndicatorWidth = 30;//指示器固定宽度
     private float mIndicatorHeight = 6;//指示器固定高度
-    private float mIndicatorWidthPercent = -1;//指示器宽度占tab宽度的百分比
+    private float mIndicatorWidth = -1;//指示器固定宽度
+    private float mIndicatorWidthPercent = -1;//指示器宽度占tab宽度的百分比(优先度大于mIndicatorWidth)
     private int mIndicatorColor;
 
     private int mCurrentTabIndex = 0;//当前页面
@@ -87,9 +90,26 @@ public class TabIndicatorLayout extends LinearLayout {
             mIndicatorHeight = typedArray.getDimension(R.styleable.TabIndicatorLayout_indicatorHeight, mIndicatorHeight);
             mIndicatorWidthPercent = typedArray.getFloat(R.styleable.TabIndicatorLayout_indicatorWidthPercent, mIndicatorWidthPercent);
             mIndicatorColor = typedArray.getColor(R.styleable.TabIndicatorLayout_indicatorColor, Color.parseColor("#FE9926"));
+            mTabWidthRatio = typedArray.getString(R.styleable.TabIndicatorLayout_tabWidthRatio);
             typedArray.recycle();
-            if (mIndicatorWidthPercent < 0 || mIndicatorWidthPercent > 1) {
+            if (mIndicatorWidthPercent != -1 && mIndicatorWidthPercent < 0 || mIndicatorWidthPercent > 1) {
                 throw new RuntimeException("app:indicatorWidthPercent取值范围[0,1]");
+            }
+            if (mTabWidthRatio != null) {
+                if (mVisibleTabNum > 1 && !mTabWidthRatio.contains(":")) {
+                    throw new RuntimeException("app:tabWidthRatio设置必须以':'分开");
+                }
+                if (mTabWidthRatio.split(":").length != mVisibleTabNum) {
+                    throw new RuntimeException("app:tabWidthRatio设置要与app:visibleTabNum对应");
+                }
+                String[] arrStr = mTabWidthRatio.split(":");
+                mTabWidthRatioArray = new float[arrStr.length];
+                mTabWidthRatioSum = 0;
+                for (int i=0;i<arrStr.length;i++) {
+                    float value = Float.valueOf(arrStr[i]);
+                    mTabWidthRatioSum = mTabWidthRatioSum + value;
+                    mTabWidthRatioArray[i] = value;
+                }
             }
         }
         radiusArray[0] = mIndicatorRadius;
@@ -165,7 +185,13 @@ public class TabIndicatorLayout extends LinearLayout {
             final float space = tab.getWidth()*(1-mIndicatorWidthPercent)*0.5f;
             return tab.getLeft() + space;
         } else {
-            return tab.getLeft();
+            if (mIndicatorWidth >= 0 && mIndicatorWidth <= tab.getWidth()) {
+                //让指示器居中的两边空格
+                final float space = (tab.getWidth()-mIndicatorWidth)*0.5f;
+                return tab.getLeft() + space;
+            } else {
+                return tab.getLeft();
+            }
         }
     }
 
@@ -175,7 +201,13 @@ public class TabIndicatorLayout extends LinearLayout {
             final float space = tab.getWidth()*(1-mIndicatorWidthPercent)*0.5f;
             return tab.getRight() - space;
         } else {
-            return tab.getRight();
+            if (mIndicatorWidth >= 0 && mIndicatorWidth <= tab.getWidth()) {
+                //让指示器居中的两边空格
+                final float space = (tab.getWidth()-mIndicatorWidth)*0.5f;
+                return tab.getRight() - space;
+            } else {
+                return tab.getRight();
+            }
         }
     }
 
@@ -208,7 +240,11 @@ public class TabIndicatorLayout extends LinearLayout {
             View view = getChildAt(pageIndex);
             /*测量孩子的宽高*/
             if (mTabFixedWidth) {
-                childWidthSize = widthSize/mVisibleTabNum;
+                if (mTabWidthRatioSum > 0) {
+                    childWidthSize = (int) (widthSize*mTabWidthRatioArray[i]/mTabWidthRatioSum);
+                } else {
+                    childWidthSize = widthSize/mVisibleTabNum;
+                }
             } else {
                 childWidthSize = widthSize;
             }
