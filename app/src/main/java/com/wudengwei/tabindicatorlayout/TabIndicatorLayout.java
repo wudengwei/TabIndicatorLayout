@@ -310,25 +310,35 @@ public class TabIndicatorLayout extends LinearLayout {
                 if (mStartX != lastTouchX) {
                     int offsetX = mStartX - lastTouchX;
                     Log.e("event ACTION_MOVE",""+offsetX+"==="+getScrollX());
-                    if (offsetX >= 0) {//从左往右滑
-                        if (getScrollX() - offsetX <= 0) {
-                            scrollBy(0,0);
-                        } else {
-                            scrollBy(-offsetX,0);
-                        }
-                    } else {//从右往左滑
-                        if (getScrollX() + mTotalWidth <= mSumTabWidth) {
-                            scrollBy(-offsetX,0);
-                        } else {
-                            scrollBy(0,0);
-                        }
-                    }
+                    scrollBy(-offsetX,0);
+//                    if (offsetX >= 0) {//从左往右滑
+//                        if (getScrollX() - offsetX <= 0) {
+//                            scrollBy(-offsetX,0);
+//                        } else {
+//                            scrollBy(0,0);
+//                        }
+//                    } else {//从右往左滑
+//                        if (getScrollX() + mTotalWidth <= mSumTabWidth) {
+//                            scrollBy(-offsetX,0);
+//                        } else {
+//                            scrollBy(0,0);
+//                        }
+//                    }
                     lastTouchX = mStartX;
                     lastTouchY = mStartY;
                     requestDisallowInterceptTouchEvent(true);
                 }
                 break;
             case MotionEvent.ACTION_UP:
+                //回弹效果
+                if (getScrollX() <= 0) {
+                    mScroller.startScroll(getScrollX(),0,-getScrollX(),0);
+                    invalidate();
+                }
+                if (getScrollX() + mTotalWidth >= mSumTabWidth) {
+                    mScroller.startScroll(getScrollX(),0,mSumTabWidth - getScrollX() - mTotalWidth,0);
+                    invalidate();
+                }
                 break;
         }
         return super.onTouchEvent(event);
