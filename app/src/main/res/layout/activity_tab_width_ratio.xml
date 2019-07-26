@@ -6,15 +6,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-    <TextView
-        android:id="@+id/tv1"
-        android:layout_width="wrap_content"
-        android:layout_height="50dp"
-        android:text="屏幕宽度按比重分给tab"
-        android:textSize="16sp"
-        android:textColor="@android:color/white"
-        android:gravity="center"
-        android:background="@color/colorAccent"/>
+    <!--<com.wudengwei.tabindicatorlayout.TabIndicatorLayout-->
+        <!--android:id="@+id/til_main_tab"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="45dp"-->
+        <!--android:background="@color/colorPrimary"-->
+        <!--android:orientation="horizontal"-->
+        <!--app:tabVisibleNum="5"-->
+        <!--app:tabFixedWidth="false"-->
+        <!--app:indicatorHeight="6dp"-->
+        <!--app:indicatorRadius="6dp"-->
+        <!--app:indicatorWidthPercent="0.2"-->
+        <!--app:indicatorColor="@color/colorPrimaryDark"/>-->
     <com.wudengwei.tabindicatorlayout.TabIndicatorLayout
         android:id="@+id/til_main_tab"
         android:layout_width="match_parent"
@@ -23,6 +26,7 @@
         android:orientation="horizontal"
         app:tabVisibleNum="4"
         app:tabFixedWidth="true"
+        app:tabWidthRatio="1:1.5:1:2"
         app:indicatorHeight="6dp"
         app:indicatorRadius="6dp"
         app:indicatorWidth="130dp"

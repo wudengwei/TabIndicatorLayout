@@ -1,6 +1,5 @@
 package com.wudengwei.tabindicatorlayout;
 
-import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -20,23 +19,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class TabWidthRatioActivity extends AppCompatActivity {
     private ViewPager mViewPager;
 
     private TabIndicatorLayout tabIndicatorLayout;
     private List<Tab> tabList;
     private TabAdapter tabAdapter;
 
-    private List<String> mTitles = Arrays.asList("新闻", "音乐节", "游戏宽度","动漫", "汽车", "打开市场","美食","情感","歌曲");
-//    private List<String> mTitles = Arrays.asList("新闻", "游戏宽度", "动漫","游戏宽度动漫");
+//    private List<String> mTitles = Arrays.asList("新闻", "音乐节", "游戏宽度","动漫", "汽车", "打开市场","美食","情感","歌曲");
+    private List<String> mTitles = Arrays.asList("新闻", "游戏宽度", "动漫","游戏宽度动漫");
     private List<Fragment> mFragments = new ArrayList<Fragment>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.e("onCreate","onCreate start");
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        initClick();
-
+        setContentView(R.layout.activity_tab_width_ratio);
         mViewPager = (ViewPager) findViewById(R.id.vp_main_content);
         tabIndicatorLayout = findViewById(R.id.til_main_tab);
         //创建Fragment
@@ -57,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
                 return mFragments.size();
             }
         });
+        Log.e("onCreate","onCreate end");
 
         tabList = new ArrayList<>();
         for (int i=0;i<mTitles.size();i++) {
@@ -96,19 +95,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v, int position) {
 //                tabList.get(position).setTitle("打开市场打开市场");
 //                tabAdapter.notifyDataSetChanged();
-                Toast.makeText(MainActivity.this,""+position,Toast.LENGTH_SHORT).show();
+                Toast.makeText(TabWidthRatioActivity.this,""+position,Toast.LENGTH_SHORT).show();
             }
         });
         tabIndicatorLayout.setViewPager(mViewPager);
-    }
-
-    private void initClick() {
-        findViewById(R.id.tv1).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this,TabWidthRatioActivity.class));
-            }
-        });
     }
 
     @Override
