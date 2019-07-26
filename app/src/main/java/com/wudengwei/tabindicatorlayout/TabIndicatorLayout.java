@@ -13,9 +13,13 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.Scroller;
 
 /**
  * Copyright (C)
@@ -81,6 +85,7 @@ public class TabIndicatorLayout extends LinearLayout {
 
     public TabIndicatorLayout(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        mScroller = new Scroller(context);
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.TabIndicatorLayout);
         if (typedArray != null) {
             mVisibleTabNum = typedArray.getInt(R.styleable.TabIndicatorLayout_tabVisibleNum, mVisibleTabNum);
@@ -258,11 +263,78 @@ public class TabIndicatorLayout extends LinearLayout {
             final View view = getChildAt(i);
             mSumTabWidth = mSumTabWidth + getChildAt(i).getMeasuredWidth();
         }
-//        Log.e("mSumTabWidth","所有tab的宽度和: "+mSumTabWidth);
-//        Log.e("mSumTabWidth","TabIndicatorLayout的可用宽度: "+mTotalWidth);
-//        Log.e("mSumTabWidth","选择tab的中心点: "+mPointTabSelected);
     }
 
+    //惯性滑动
+    private Scroller mScroller;
+
+    @Override
+    public void computeScroll() {
+        super.computeScroll();
+        if (mScroller.computeScrollOffset()) {
+            // 产生了动画效果，根据当前值 每次滚动一点
+            scrollTo(mScroller.getCurrX(), mScroller.getCurrY());
+            postInvalidate();
+        }
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent event) {
+        switch (event.getAction()) {
+            //手指按下时执行的方法
+            case MotionEvent.ACTION_DOWN:
+                lastTouchX = (int) event.getX();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (Math.abs(event.getX()-lastTouchX) > 10) {
+                    return true;
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                break;
+        }
+        return super.onInterceptTouchEvent(event);
+    }
+
+    int lastTouchX=-1;
+    int lastTouchY=-1;
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        int mStartX = (int) event.getX();
+        int mStartY = (int) event.getY();
+        switch (event.getAction()) {
+            //手指按下时执行的方法
+            case MotionEvent.ACTION_DOWN:
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (mStartX != lastTouchX) {
+                    int offsetX = mStartX - lastTouchX;
+                    Log.e("event ACTION_MOVE",""+offsetX+"==="+getScrollX());
+                    if (offsetX >= 0) {//从左往右滑
+                        if (getScrollX() - offsetX <= 0) {
+                            scrollBy(0,0);
+                        } else {
+                            scrollBy(-offsetX,0);
+                        }
+                    } else {//从右往左滑
+                        if (getScrollX() + mTotalWidth <= mSumTabWidth) {
+                            scrollBy(-offsetX,0);
+                        } else {
+                            scrollBy(0,0);
+                        }
+                    }
+                    lastTouchX = mStartX;
+                    lastTouchY = mStartY;
+                    requestDisallowInterceptTouchEvent(true);
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                break;
+        }
+        return super.onTouchEvent(event);
+    }
+
+    //---------------------------ViewPager滑动-----------------------------------
     //记录上次滑动位置，防止重复滑动
     private int lastPositionOffsetPixels = 0;
     //记录开始滑动的页面
