@@ -8,9 +8,11 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.VelocityTrackerCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
@@ -89,7 +91,11 @@ public class TabIndicatorLayout extends LinearLayout {
 
     public TabIndicatorLayout(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        mScroller = new Scroller(context);
+        mScroller = new OverScroller(context);
+        final ViewConfiguration vc = ViewConfiguration.get(context);
+        mTouchSlop = vc.getScaledTouchSlop();
+        mMinFlingVelocity = vc.getScaledMinimumFlingVelocity();
+        mMaxFlingVelocity = vc.getScaledMaximumFlingVelocity();
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.TabIndicatorLayout);
         if (typedArray != null) {
             mVisibleTabNum = typedArray.getInt(R.styleable.TabIndicatorLayout_tabVisibleNum, mVisibleTabNum);
@@ -270,14 +276,20 @@ public class TabIndicatorLayout extends LinearLayout {
     }
 
     //惯性滑动
-    private Scroller mScroller;
-
+    private OverScroller mScroller;
+    private int mLastFlingX = 0;
+    private VelocityTracker mVelocityTracker;
+    private int mTouchSlop;//判断滑动的临界值
+    private int mMinFlingVelocity;//最小加速度
+    private int mMaxFlingVelocity;//最大加速度
     @Override
     public void computeScroll() {
         super.computeScroll();
         if (mScroller.computeScrollOffset()) {
-            // 产生了动画效果，根据当前值 每次滚动一点
-            scrollTo(mScroller.getCurrX(), mScroller.getCurrY());
+            final int x = mScroller.getCurrX();
+            int dx = x - mLastFlingX;
+            mLastFlingX = x;
+            constrainScrollBy(dx, 0);
             postInvalidate();
         }
     }
@@ -287,10 +299,13 @@ public class TabIndicatorLayout extends LinearLayout {
         switch (event.getAction()) {
             //手指按下时执行的方法
             case MotionEvent.ACTION_DOWN:
+                if (!mScroller.isFinished()) {
+                    mScroller.abortAnimation();
+                }
                 lastTouchX = (int) event.getX();
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (Math.abs(event.getX()-lastTouchX) > 10) {
+                if (Math.abs(event.getX()-lastTouchX) > mTouchSlop) {
                     return true;
                 }
                 break;
@@ -306,46 +321,66 @@ public class TabIndicatorLayout extends LinearLayout {
     public boolean onTouchEvent(MotionEvent event) {
         int mStartX = (int) event.getX();
         int mStartY = (int) event.getY();
+        if (mVelocityTracker == null) {
+            mVelocityTracker = VelocityTracker.obtain();
+        }
         switch (event.getAction()) {
             //手指按下时执行的方法
             case MotionEvent.ACTION_DOWN:
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (mStartX != lastTouchX) {
-                    int offsetX = mStartX - lastTouchX;
-                    Log.e("event ACTION_MOVE",""+offsetX+"==="+getScrollX());
-                    scrollBy(-offsetX,0);
-//                    if (offsetX >= 0) {//从左往右滑
-//                        if (getScrollX() - offsetX <= 0) {
-//                            scrollBy(-offsetX,0);
-//                        } else {
-//                            scrollBy(0,0);
-//                        }
-//                    } else {//从右往左滑
-//                        if (getScrollX() + mTotalWidth <= mSumTabWidth) {
-//                            scrollBy(-offsetX,0);
-//                        } else {
-//                            scrollBy(0,0);
-//                        }
-//                    }
+                    int dx = mStartX - lastTouchX;
+                    //Log.e("event ACTION_MOVE",""+dx+"==="+getScrollX());
                     lastTouchX = mStartX;
                     lastTouchY = mStartY;
+                    constrainScrollBy(-dx,0);
                     requestDisallowInterceptTouchEvent(true);
+                    mVelocityTracker.addMovement(event);
                 }
                 break;
             case MotionEvent.ACTION_UP:
-                //回弹效果
-                if (getScrollX() <= 0) {
-                    mScroller.startScroll(getScrollX(),0,-getScrollX(),0);
-                    invalidate();
+                mVelocityTracker.addMovement(event);
+                mVelocityTracker.computeCurrentVelocity(1000, mMaxFlingVelocity);
+                float xVelocity = -mVelocityTracker.getXVelocity();
+                if (Math.abs(xVelocity) < mMinFlingVelocity) {
+                    xVelocity = 0F;
+                } else {
+                    xVelocity = Math.max(-mMaxFlingVelocity, Math.min(xVelocity, mMaxFlingVelocity));
                 }
-                if (getScrollX() + mTotalWidth >= mSumTabWidth) {
-                    mScroller.startScroll(getScrollX(),0,mSumTabWidth - getScrollX() - mTotalWidth,0);
-                    invalidate();
+                if (xVelocity != 0) {
+                    fling((int) xVelocity);
+                } else {
+                    mScroller.abortAnimation();
+                }
+                if (mVelocityTracker != null) {
+                    mVelocityTracker.clear();
                 }
                 break;
         }
         return super.onTouchEvent(event);
+    }
+
+    private void fling(int xVelocity) {
+        mLastFlingX = 0;
+        mScroller.fling(0, 0, xVelocity, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE);
+        invalidate();
+    }
+
+    private void constrainScrollBy(int dx, int dy) {
+        if (dx == 0)
+            return;
+        final int scrollX = getScrollX();
+        final int scrollY = getScrollY();
+        //左边界
+        if (-scrollX - dx > 0) {
+            dx = -scrollX;
+        }
+        //右边界
+        if (mTotalWidth + scrollX + dx > mSumTabWidth) {
+            dx = mSumTabWidth - mTotalWidth - scrollX;
+        }
+        scrollBy(dx, dy);
     }
 
     //---------------------------ViewPager滑动-----------------------------------
