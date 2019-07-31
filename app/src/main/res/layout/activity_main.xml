@@ -8,7 +8,7 @@
     android:orientation="vertical">
     <TextView
         android:id="@+id/tv1"
-        android:layout_width="wrap_content"
+        android:layout_width="100dp"
         android:layout_height="50dp"
         android:text="屏幕宽度按比重分给tab"
         android:textSize="16sp"
@@ -21,11 +21,13 @@
         android:layout_height="45dp"
         android:background="@color/colorPrimary"
         android:orientation="horizontal"
-        app:tabVisibleNum="4"
+        app:tabVisibleNum="3"
         app:tabFixedWidth="true"
+        app:tabScrollOffset="60dp"
         app:indicatorHeight="6dp"
         app:indicatorRadius="6dp"
         app:indicatorWidth="130dp"
+        app:indicatorWidthPercent="1"
         app:indicatorColor="@color/colorPrimaryDark"/>
     <android.support.v4.view.ViewPager
         android:id="@+id/vp_main_content"

@@ -11,14 +11,20 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.view.VelocityTrackerCompat;
+import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.animation.Interpolator;
 import android.widget.LinearLayout;
+import android.widget.OverScroller;
 import android.widget.Scroller;
 
 /**
@@ -32,6 +38,7 @@ public class TabIndicatorLayout extends LinearLayout {
     private int mVisibleTabNum = 5;//tabFixedWidth=true情况下,父view可以显示的tab数量（每个tab的宽度相等）
     private boolean mTabFixedWidth = true;//tab的宽度是否固定（默认是，配合mVisibleTabNum）
     private String mTabWidthRatio;//tabFixedWidth=true情况下,屏幕宽度按比重分给tab(专门针对，tab数量固定，但每个tab宽度相差较大)
+    private int mTabScrollOffset = -1;//滑动过程中，tab与父视图的左边保持的距离(不设置默认为tab居中)
     private float mTabWidthRatioSum;
     private float[] mTabWidthRatioArray;
 
@@ -46,11 +53,8 @@ public class TabIndicatorLayout extends LinearLayout {
     private int mIndicatorColor;
 
     private int mCurrentTabIndex = 0;//当前页面
-    private int scrollOffset = 0;//
-    private int lastScrollX = 0;
-    private int mSumTabWidth = 0;
+    private int mSumTabWidth = 0;//所有tab宽度和
     private int mTotalWidth = 0;//TabIndicatorLayout的可用宽度
-    private int mPointTabSelected = 0;//选择tab的中心点
 
 
     private ViewPager mViewPager;//关联的ViewPager
@@ -96,6 +100,7 @@ public class TabIndicatorLayout extends LinearLayout {
             mIndicatorWidthPercent = typedArray.getFloat(R.styleable.TabIndicatorLayout_indicatorWidthPercent, mIndicatorWidthPercent);
             mIndicatorColor = typedArray.getColor(R.styleable.TabIndicatorLayout_indicatorColor, Color.parseColor("#FE9926"));
             mTabWidthRatio = typedArray.getString(R.styleable.TabIndicatorLayout_tabWidthRatio);
+            mTabScrollOffset = typedArray.getDimensionPixelOffset(R.styleable.TabIndicatorLayout_tabScrollOffset, mTabScrollOffset);
             typedArray.recycle();
             if (mIndicatorWidthPercent != -1 && mIndicatorWidthPercent < 0 || mIndicatorWidthPercent > 1) {
                 throw new RuntimeException("app:indicatorWidthPercent取值范围[0,1]");
@@ -258,7 +263,6 @@ public class TabIndicatorLayout extends LinearLayout {
         //获取测量后所有tab的宽度和
         mSumTabWidth = 0;
         mTotalWidth = getMeasuredWidth();
-        mPointTabSelected = mTotalWidth/2;
         for (int i=0;i<getChildCount();i++) {
             final View view = getChildAt(i);
             mSumTabWidth = mSumTabWidth + getChildAt(i).getMeasuredWidth();
@@ -345,14 +349,13 @@ public class TabIndicatorLayout extends LinearLayout {
     }
 
     //---------------------------ViewPager滑动-----------------------------------
-    //记录上次滑动位置，防止重复滑动
-    private int lastPositionOffsetPixels = 0;
     //记录开始滑动的页面
     private int mScrollPagerIndex;
     //记录开始滑动的页面百分比
     private float mPositionOffset;
     //记录开始滑动的页面
     private int mTempScrollPosition;
+    private int lastScrollX = 0;//记录最后滑动位置，放置重复滑动
     /**
      * 绑定ViewPager
      *
@@ -368,14 +371,11 @@ public class TabIndicatorLayout extends LinearLayout {
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
                 mPositionOffset = positionOffset;
                 mTempScrollPosition = position;
-                if (lastPositionOffsetPixels != positionOffsetPixels) {
-                    if(mScrollPagerIndex == position){//正在向左滑动,正在进入下一页
+                scroll(position, positionOffset);
+                if(mScrollPagerIndex == position){//正在向左滑动,正在进入下一页
 //                        Log.e("onPageScrolled","正在向左滑动");
-                    }else{//正在向右滑动,正在进入上一页
+                }else{//正在向右滑动,正在进入上一页
 //                        Log.e("正在向右滑动","正在向右滑动");
-                    }
-                    scroll(position, positionOffset);
-                    lastPositionOffsetPixels = positionOffsetPixels;
                 }
             }
 
@@ -422,13 +422,15 @@ public class TabIndicatorLayout extends LinearLayout {
             //tab滑动
             final View currTab = getChildAt(position);
             int offset = (int) (positionOffset * currTab.getWidth());
-            int newScrollX = currTab.getLeft() + currTab.getWidth()/2 + offset;
-            if (position > 0 || offset > 0) {
-                newScrollX -= scrollOffset;
+            int newScrollX = (int) (currTab.getLeft() + currTab.getWidth()*0.5 + offset);
+            int threshold = (int) (mTotalWidth*0.5);
+            if (mTabScrollOffset >= 0) {
+                newScrollX = currTab.getLeft() + offset;
+                threshold = mTabScrollOffset;
             }
             if (newScrollX != lastScrollX) {
-                if (newScrollX >= mPointTabSelected) {
-                    newScrollX -= mPointTabSelected;
+                if (newScrollX >= threshold) {
+                    newScrollX -= threshold;
                     lastScrollX = newScrollX;
                     if (newScrollX + mTotalWidth <= mSumTabWidth) {
                         scrollTo(newScrollX, 0);

@@ -8,6 +8,8 @@
         <attr name="tabFixedWidth" format="boolean" />
         <!-- tabFixedWidth=true情况下,屏幕宽度按比重分给tab -->
         <attr name="tabWidthRatio" format="string" />
+        <!-- 滑动过程中，tab与父视图的左边保持的距离(不设置默认为tab居中) -->
+        <attr name="tabScrollOffset" format="dimension" />
         <!-- 指示器圆角 -->
         <attr name="indicatorRadius" format="dimension" />
         <!-- 指示器宽度 -->
