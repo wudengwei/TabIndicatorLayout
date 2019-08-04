@@ -488,12 +488,67 @@ public class TabIndicatorLayout extends LinearLayout {
         addAdapterItems();
     }
 
+    /**
+     * 更新所有数据
+     */
     private void dataSetChanged() {
         if (this.mAdapter != null && getChildCount() > 0) {
             for (int i=0;i<getChildCount();i++) {
                 final int pageIndex = i;
                 //赋值position位置的view
                 this.mAdapter.onBindView(getChildAt(i),pageIndex,mCurrentTabIndex);
+            }
+        }
+    }
+
+    /**
+     * 删除tab
+     * @param position 开始位置
+     * @param itemCount 删除数量
+     */
+    private void onItemRangeRemoved(int position, int itemCount) {
+        int count = getChildCount();
+        int endIndex = position+itemCount-1;
+        if (position >= 0 && position <= count-1 && endIndex <= count-1) {
+            Log.e("删除","删除位置["+position+","+endIndex+"]");
+            if (mCurrentTabIndex >= getChildCount())
+                mCurrentTabIndex = getChildCount()-1;
+            removeViews(position, itemCount);
+            int newCount = getChildCount();
+            for (int i=0;i<newCount;i++) {
+                View view = getChildAt(i);
+                view.setTag(i);
+                mAdapter.onBindView(view,i,mCurrentTabIndex);
+                view.setOnClickListener(onClickListener);
+            }
+        } else {
+            throw new IndexOutOfBoundsException("子view总数："+count+",删除位置["+position+","+endIndex+"]");
+        }
+    }
+
+    /**
+     * 添加tab
+     * @param position 开始位置
+     * @param itemCount 添加数量
+     */
+    private void onItemRangeInserted(final int position, final int itemCount) {
+        Log.e("onItemRangeInserted",""+position+" ,"+itemCount);
+        int count = mAdapter.getCount();
+        for (int i=position;i<count;i++) {
+            Log.e("i",""+i);
+            if (i >= position && i < position+itemCount) {
+                Log.e("添加position",""+position);
+                //获得position位置的view
+                View view = this.mAdapter.onCreateView(this,i);
+                view.setTag(i);
+                mAdapter.onBindView(view,i,mCurrentTabIndex);
+                view.setOnClickListener(onClickListener);
+                addView(view,i);
+            } else {
+                View view = getChildAt(i);
+                view.setTag(i);
+                mAdapter.onBindView(view,i,mCurrentTabIndex);
+                view.setOnClickListener(onClickListener); 
             }
         }
     }
@@ -506,14 +561,33 @@ public class TabIndicatorLayout extends LinearLayout {
             TabIndicatorLayout.this.dataSetChanged();
         }
 
+        public void notifyItemRangeRemoved(int position, int itemCount) {TabIndicatorLayout.this.onItemRangeRemoved(position, itemCount);}
+
+        public void notifyItemInserted(int position, int itemCount) {TabIndicatorLayout.this.onItemRangeInserted(position, itemCount);}
+
         public void onInvalidated() {
             TabIndicatorLayout.this.dataSetChanged();
         }
     }
 
+    private static class AdapterDataObservable extends DataSetObservable {
+
+        public void notifyItemRangeRemoved(int positionStart, int itemCount) {
+            for(int i = this.mObservers.size() - 1; i >= 0; --i) {
+                ((PagerObserver)this.mObservers.get(i)).notifyItemRangeRemoved(positionStart, itemCount);
+            }
+        }
+
+        public void notifyItemInserted(int positionStart, int itemCount) {
+            for(int i = this.mObservers.size() - 1; i >= 0; --i) {
+                ((PagerObserver)this.mObservers.get(i)).notifyItemInserted(positionStart, itemCount);
+            }
+        }
+    }
+
     public abstract static class Adapter {
-        private final DataSetObservable mObservable = new DataSetObservable();
-        private DataSetObserver mViewPagerObserver;
+        private final AdapterDataObservable mObservable = new AdapterDataObservable();
+        private PagerObserver mViewPagerObserver;
 
         //------------------------添加点击事件------------------------------
 
@@ -530,10 +604,11 @@ public class TabIndicatorLayout extends LinearLayout {
         public Adapter() {
         }
 
-        void setObserver(DataSetObserver observer) {
+        void setObserver(PagerObserver observer) {
             synchronized(this) {
                 this.mViewPagerObserver = observer;
             }
+            registerDataSetObserver(mViewPagerObserver);
         }
 
         public abstract int getCount();
@@ -553,6 +628,15 @@ public class TabIndicatorLayout extends LinearLayout {
             }
 
             this.mObservable.notifyChanged();
+        }
+
+        public void notifyItemRemoved(int position) {
+            this.mObservable.notifyItemRangeRemoved(position, 1);
+        }
+
+
+        public void notifyItemInserted(int position) {
+            this.mObservable.notifyItemInserted(position, 1);
         }
 
         public void registerDataSetObserver(@NonNull DataSetObserver observer) {

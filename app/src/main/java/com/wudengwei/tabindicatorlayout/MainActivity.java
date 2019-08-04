@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -14,10 +13,12 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.wudengwei.tabindicatorlayout.adapter.EditViewPagerAdapter;
 import com.wudengwei.tabindicatorlayout.bean.Tab;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -25,12 +26,14 @@ public class MainActivity extends AppCompatActivity {
 
     private TabIndicatorLayout tabIndicatorLayout;
     private List<Tab> tabList;
+    private List<Tab> viewPagerList;
     private TabAdapter tabAdapter;
 
-    private List<String> mTitles = Arrays.asList("新闻", "音乐节", "游戏宽度","动漫", "汽车", "打开市场","美食","情感","歌曲");
+    private ArrayList<String> mTitles = new ArrayList<>();
 //    private List<String> mTitles = Arrays.asList("新闻", "游戏宽度", "动漫","游戏宽度动漫");
     private List<Fragment> mFragments = new ArrayList<Fragment>();
 
+    EditViewPagerAdapter editViewPagerAdapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,28 +42,19 @@ public class MainActivity extends AppCompatActivity {
 
         mViewPager = (ViewPager) findViewById(R.id.vp_main_content);
         tabIndicatorLayout = findViewById(R.id.til_main_tab);
+
+        mTitles.addAll(Arrays.asList("新闻", "音乐节", "游戏宽度","动漫", "汽车", "打开市场","美食","情感","歌曲"));
         //创建Fragment
         for (String title : mTitles) {
             SimpleFragmet simpleFragmet = SimpleFragmet.newInstance(title);
             mFragments.add(simpleFragmet);
         }
 
-        //设置适配器
-        mViewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager()) {
-            @Override
-            public Fragment getItem(int position) {
-                return mFragments.get(position);
-            }
-
-            @Override
-            public int getCount() {
-                return mFragments.size();
-            }
-        });
-
         tabList = new ArrayList<>();
+        viewPagerList = new ArrayList<>();
         for (int i=0;i<mTitles.size();i++) {
             tabList.add(new Tab(mTitles.get(i),"1"));
+            viewPagerList.add(new Tab(mTitles.get(i),"1"));
         }
         tabIndicatorLayout.setAdapter(tabAdapter = new TabAdapter<Tab>(R.layout.tab_item,tabList) {
             @Override
@@ -100,6 +94,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         tabIndicatorLayout.setViewPager(mViewPager);
+
+        //设置适配器
+        mViewPager.setAdapter(editViewPagerAdapter = new EditViewPagerAdapter(getSupportFragmentManager(),viewPagerList));
+//        editViewPagerAdapter.setData(viewPagerList);
+//        editViewPagerAdapter.notifyDataSetChanged();
+
     }
 
     private void initClick() {
@@ -107,6 +107,34 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this,TabWidthRatioActivity.class));
+            }
+        });
+        findViewById(R.id.tv_change).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Collections.swap(tabList,1,2);
+                tabAdapter.notifyDataSetChanged();
+                Collections.swap(viewPagerList,1,2);
+                editViewPagerAdapter.notifyDataSetChanged();
+            }
+        });
+        findViewById(R.id.tv_remove).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                tabList.remove(2);
+                tabAdapter.notifyItemRemoved(2);
+                viewPagerList.remove(2);
+                editViewPagerAdapter.notifyDataSetChanged();
+            }
+        });
+        findViewById(R.id.tv_add).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                tabList.add(2,new Tab("测试","9"));
+                Log.e("mTitles",""+tabAdapter.getCount());
+                tabAdapter.notifyItemInserted(2);
+                viewPagerList.add(2,new Tab("测试","9"));
+                editViewPagerAdapter.notifyDataSetChanged();
             }
         });
     }
