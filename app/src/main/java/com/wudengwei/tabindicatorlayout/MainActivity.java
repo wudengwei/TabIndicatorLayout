@@ -96,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
         tabIndicatorLayout.setViewPager(mViewPager);
 
         //设置适配器
+        mViewPager.setOffscreenPageLimit(1);
         mViewPager.setAdapter(editViewPagerAdapter = new EditViewPagerAdapter(getSupportFragmentManager(),viewPagerList));
 //        editViewPagerAdapter.setData(viewPagerList);
 //        editViewPagerAdapter.notifyDataSetChanged();
