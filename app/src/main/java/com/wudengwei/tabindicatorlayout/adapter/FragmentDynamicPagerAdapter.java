@@ -332,7 +332,6 @@ public abstract class FragmentDynamicPagerAdapter<T> extends PagerAdapter {
 
     @Override
     public void restoreState(Parcelable state, ClassLoader loader) {
-
         if (state != null) {
             Bundle bundle = (Bundle) state;
             bundle.setClassLoader(loader);

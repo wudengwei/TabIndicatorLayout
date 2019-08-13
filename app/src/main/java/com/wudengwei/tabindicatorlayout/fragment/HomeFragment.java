@@ -38,9 +38,7 @@ public class HomeFragment extends BaseFragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        if (rootView != null)
-            return rootView;
-        rootView = inflater.inflate(R.layout.fragment_home, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_home, container, false);
         unbinder = ButterKnife.bind(this, rootView);
         tvTitle.setText(title);
         return rootView;
@@ -50,47 +48,30 @@ public class HomeFragment extends BaseFragment {
     private int unVisibleCount = 1;
 
     @Override
-    protected void onVisibleChange(boolean isVisible, boolean firstVisible) {
-        super.onVisibleChange(isVisible, firstVisible);
-        if (isVisible) {
-            if (firstVisible) {
-                Log.e("CARD " + title, "第一次可见");
-                tv.setText("第一次可见");
-            } else {
-                Log.e("CARD " + title, isVisible ? "可见" : "不可见");
-                tv.setText("第" + visibleCount + "次可见");
-            }
-            visibleCount++;
-        } else {
-            Log.e("CARD " + title, isVisible ? "可见" : "不可见");
-            tv.setText("第" + unVisibleCount + "不可见");
-            unVisibleCount++;
-        }
+    protected void onLazyLoad() {
+        super.onLazyLoad();
+        Log.e("onLazyLoad",""+title+"懒加载");
+        tvTitle.setText(title);
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        if (getUserVisibleHint()) {
-            Log.e("onResume",title+"可见");
-        } else {
-            Log.e("onResume",title+"不可见");
-        }
+    protected void onResumeVisible() {
+        super.onResumeVisible();
+        tv.setText("第"+visibleCount+"次可见");
+        visibleCount++;
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-        if (getUserVisibleHint()) {
-            Log.e("onPause",title+"可见");
-        } else {
-            Log.e("onPause",title+"不可见");
-        }
+    protected void onPauseInVisible() {
+        super.onPauseInVisible();
+        tv.setText("第"+unVisibleCount+"次不可见");
+        unVisibleCount++;
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
+    public void onDestroyView() {
+        super.onDestroyView();
+        Log.e("onDestroyView",""+title+"摧毁视图");
         unbinder.unbind();
     }
 }
