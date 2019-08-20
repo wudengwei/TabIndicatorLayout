@@ -40,6 +40,11 @@ public class BaseFragment extends Fragment {
      */
     private boolean isOnResumeVisible = false;
 
+    //标识显示或隐藏的来源
+    public final int tagOnResume = 1;
+    public final int tagVisibleToUser = 2;
+    public final int tagOnPause = 3;
+
     @Override
     public void onAttach(Context context) {
         this.mActivity = (Activity) context;
@@ -82,7 +87,7 @@ public class BaseFragment extends Fragment {
         }
         if (getUserVisibleHint() && !isOnResumeVisible) {//onResume()在可见状态下调用
             isOnResumeVisible = true;
-            onResumeVisible();
+            onResumeVisible(tagOnResume);
         }
     }
 
@@ -92,7 +97,7 @@ public class BaseFragment extends Fragment {
         //onResume()在可见状态下调用后，进入onPause()
         if (!isFirstOnResume && isOnResumeVisible) {
             isOnResumeVisible = false;
-            onPauseInVisible();
+            onPauseInVisible(tagOnPause);
         }
     }
 
@@ -113,11 +118,11 @@ public class BaseFragment extends Fragment {
         }
         if (isVisible && !isFirstOnResume && !isOnResumeVisible) {//isFirstOnResume=false表示fragment预加载，onResume()在可见状态下调用
             isOnResumeVisible = true;
-            onResumeVisible();
+            onResumeVisible(tagVisibleToUser);
         }
         if (!isVisible && !isFirstOnResume && isOnResumeVisible) {
             isOnResumeVisible = false;
-            onPauseInVisible();
+            onPauseInVisible(tagVisibleToUser);
         }
     }
 
@@ -131,12 +136,14 @@ public class BaseFragment extends Fragment {
     /**
      * 替代具有不确定性的onResume()（ViewPager可能会让多个fragment执行onResume()，但有些fragment执行后是不可见状态的）
      * 我需要的是执行onResume后，确定是可见状态的方法
+     * @param tag 标识显示的来源
      */
-    protected void onResumeVisible() {}
+    protected void onResumeVisible(int tag) {}
 
     /**
      * 替代具有不确定性的onPause()（ViewPager可能会让多个fragment执行onPause()）
      * 我需要的是执行onPause前，确定执行onResume()
+     * @param tag 标识隐藏的来源
      */
-    protected void onPauseInVisible() {}
+    protected void onPauseInVisible(int tag) {}
 }

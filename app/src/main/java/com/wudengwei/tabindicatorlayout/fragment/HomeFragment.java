@@ -55,15 +55,15 @@ public class HomeFragment extends BaseFragment {
     }
 
     @Override
-    protected void onResumeVisible() {
-        super.onResumeVisible();
+    protected void onResumeVisible(int tag) {
+        super.onResumeVisible(tag);
         tv.setText("第"+visibleCount+"次可见");
         visibleCount++;
     }
 
     @Override
-    protected void onPauseInVisible() {
-        super.onPauseInVisible();
+    protected void onPauseInVisible(int tag) {
+        super.onPauseInVisible(tag);
         tv.setText("第"+unVisibleCount+"次不可见");
         unVisibleCount++;
     }
